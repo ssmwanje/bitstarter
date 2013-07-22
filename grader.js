@@ -27,6 +27,19 @@ var cheerio = require('cheerio');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
 
+var util = require('util');
+var rest = require('restler');
+var readURL = function(apiurl, outfile) {
+	rest.get(apiurl).on('complete', function(result) {
+		if (result instanceof Error) {
+			sys.puts('Error here: ' + result.message);
+		} else {
+			fs.writeFileSync(outfile,result, 'utf8');
+		}
+	});
+	return outfile;
+};
+
 var assertFileExists = function(infile) {
 	var instr = infile.toString();
 	if(!fs.existsSync(instr)) {
@@ -65,10 +78,17 @@ if(require.main == module) {
 	program
 	.option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
 	.option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+	.option('-u, --url <url>', 'url to index.html')
 	.parse(process.argv);
-	var checkJson = checkHtmlFile(program.file, program.checks);
+	var file2check = program.file;
+	if (program.url){
+		file2check = readURL(program.url,"urlfile.html");
+		util.puts(file2check);
+	}
+	var checkJson = checkHtmlFile(file2check, program.checks);
 	var outJson = JSON.stringify(checkJson, null, 4);
 	console.log(outJson);
+	fs.writeFileSync('/home/stephen/Startup_eng/HW3_Prog-P3',outJson, 'utf8');
 } else {
 	exports.checkHtmlFile = checkHtmlFile;
 }
